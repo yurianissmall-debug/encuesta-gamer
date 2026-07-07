@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Pulse - Encuesta de Preferencias Gaming</title>
+    
+    <style>
+        :root {
+            --bg: #050508;
+            --panel: #0d0d1f;
+            --neon-cyan: #00f2fe;
+            --neon-magenta: #ff007f;
+            --neon-yellow: #fefe00;
+            --neon-green: #39ff14;
+            --text: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #110724 0%, #050508 80%);
+            overflow-x: hidden;
+            padding: 20px 0;
+        }
+
+        .container {
+            background-color: var(--panel);
+            width: 95%;
+            max-width: 800px;
+            padding: 30px;
+            border-radius: 16px;
+            border: 3px solid var(--neon-cyan);
+            box-shadow: 0 0 25px var(--neon-magenta);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--neon-cyan);
+            margin-bottom: 5px;
+            animation: pulseGlow 3s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { text-shadow: 0 0 10px var(--neon-cyan); border-color: var(--neon-cyan); }
+            100% { text-shadow: 0 0 20px var(--neon-yellow); border-color: var(--neon-yellow); }
+        }
+
+        .law-banner {
+            background: rgba(255, 0, 127, 0.1);
+            border: 1px solid var(--neon-magenta);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .progress-bar-container {
+            width: 100%; height: 12px; background: #222; border-radius: 10px; margin: 20px 0; overflow: hidden; border: 1px solid #fff;
+        }
+        .progress-bar {
+            height: 100%; width: 0%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta)); transition: width 0.5s ease;
+        }
+
+        .page { display: none; animation: slideIn 0.4s forwards; }
+        .page.active { display: block; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .question-box {
+            background: rgba(255, 255, 255, 0.02);
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid var(--neon-cyan);
+        }
+        .question-box:nth-child(2) { border-left-color: var(--neon-magenta); }
+        .question-box:nth-child(3) { border-left-color: var(--neon-yellow); }
+
+        legend { font-size: 1.1rem; font-weight: bold; margin-bottom: 12px; color: #fff; }
+
+        .option-label {
+            display: block; background: #141429; padding: 12px 15px; margin-bottom: 8px; border-radius: 6px;
+            cursor: pointer; border: 1px solid #333; transition: 0.2s; font-size: 0.95rem;
+        }
+        .option-label:hover {
+            background: #1f1f3d; border-color: var(--neon-green); transform: translateX(4px);
+        }
+
+        input[type="radio"]:checked + .option-label {
+            background: #112a45; border-color: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .controls { display: flex; justify-content: space-between; margin-top: 25px; gap: 15px; }
+        button {
+            padding: 12px 25px; font-size: 1rem; font-weight: bold; cursor: pointer; border-radius: 4px;
+            border: 2px solid #fff; background: #000; color: #fff; text-transform: uppercase; transition: 0.2s;
+        }
+        button:hover:not(:disabled) { background: #fff; color: #000; box-shadow: 0 0 10px var(--neon-green); }
+        button:disabled { opacity: 0.2; cursor: not-allowed; }
+        
+        .loading { color: var(--neon-yellow); font-weight: bold; text-align: center; display: none; margin: 15px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Gamer Preferences Survey</h1>
+        
+        <!-- Consentimiento Informado Exigido por la Ley 81 de Panamá -->
+        <div class="law-banner" id="consentBanner">
+            <strong style="color:var(--neon-yellow)">⚖️ CUMPLIMIENTO CON LA LEY 81 DE PANAMÁ:</strong><br>
+            Los datos de preferencias de videojuegos recolectados a través de este formulario son de carácter totalmente anónimo y confidencial. Se almacenarán en una base de datos segura únicamente para análisis estadístico del proyecto. Al iniciar, usted otorga su consentimiento implícito.
+        </div>
+
+        <div class="progress-bar-container" id="progressContainer" style="display:none;">
+            <div class="progress-bar" id="progress"></div>
+        </div>
+
+        <form id="surveyForm">
+            <!-- PANTALLA DE INICIO / CONSENTIMIENTO LEGAL OBLIGATORIO -->
+            <div class="page active" id="pageConsent">
+                <div class="question-box" style="border-left-color: var(--neon-magenta)">
+                    <legend>Consentimiento para Recolección de Datos</legend>
+                    <p style="margin-bottom: 15px; font-size:0.95rem; color:#aaa;">¿Aceptas participar en la encuesta de forma libre sabiendo que tus datos están protegidos y no se asociarán a tu identidad?</p>
+                    <input type="radio" id="consent_yes" name="consentimiento" value="si" hidden required>
+                    <label for="consent_yes" class="option-label">✅ Sí, acepto las condiciones y deseo empezar</label>
+                </div>
+                <div class="controls" style="justify-content: flex-end;">
+                    <button type="button" onclick="iniciarEncuesta()">Siguiente</button>
+                </div>
+            </div>
+
+            <!-- BLOQUE 1: PREGUNTAS 1, 2 y 3 (Hábitos Generales) -->
+            <div class="page" data-page="1">
+                <div class="question-box">
+                    <legend>1. ¿Cuál es tu plataforma principal de juego?</legend>
+                    <input type="radio" id="p1_1" name="plataforma" value="PC" hidden>
+                    <label for="p1_1" class="option-label">💻 PC (Computadora)</label>
+                    <input type="radio" id="p1_2" name="plataforma" value="Consola" hidden>
+                    <label for="p1_2" class="option-label">🎮 Consola de sobremesa (PlayStation, Xbox, Nintendo Switch)</label>
+                    <input type="radio" id="p1_3" name="plataforma" value="Movil" hidden>
+                    <label for="p1_3" class="option-label">📱 Dispositivo Móvil (Smartphone / Tablet)</label>
+                </div>
+                <div class="question-box">
+                    <legend>2. ¿Cuántas horas aproximadas dedicas a jugar por semana?</legend>
+                    <input type="radio" id="p2_1" name="horas" value="Menos de 5" hidden>
+                    <label for="p2_1" class="option-label">⚡ Menos de 5 horas (Jugador casual)</label>
+                    <input type="radio" id="p2_2" name="horas" value="5 a 15" hidden>
+                    <label for="p2_2" class="option-label">🔥 Entre 5 y 15 horas (Jugador regular)</label>
+                    <input type="radio" id="p2_3" name="horas" value="Mas de 15" hidden>
+                    <label for="p2_3" class="option-label">🏆 Más de 15 horas (Jugador intensivo)</label>
+                </div>
+                <div class="question-box">
+                    <legend>3. ¿Qué formato de videojuegos prefieres adquirir habitualmente?</legend>
+                    <input type="radio" id="p3_1" name="formato" value="Digital" hidden>
+                    <label for="p3_1" class="option-label">🌐 Formato Digital (Descargas desde tiendas online)</label>
+                    <input type="radio" id="p3_2" name="formato" value="Fisico" hidden>
+                    <label for="p3_2" class="option-label">💿 Formato Físico (Discos / Cartuchos físicos)</label>
+                </div>
+                <div class="controls">
+                    <button type="button" onclick="navegar(-1)">Atrás</button>
+                    <button type="button" onclick="navegar(1)">Siguiente</button>
+                </div>
+            </div>
+
+            <!-- BLOQUE 2: PREGUNTAS 4, 5 y 6 (Tipos de Juego y Estilos) -->
+            <div class="page" data-page="2">
+                <div class="question-box">
+                    <legend>4. ¿Qué tipo de experiencia en videojuegos se adapta más a tus gustos?</legend>
+                    <input type="radio" id="p4_1" name="modo" value="Single-player" hidden>
+                    <label for="p4_1" class="option-label">🕹️ Un jugador (Modo Campaña / Historia en solitario)</label>
+                    <input type="radio" id="p4_2" name="modo" value="Multijugador" hidden>
+                    <label for="p4_2" class="option-label">🌐 Multijugador (Competitivo online / Cooperativo con amigos)</label>
+                </div>
+                <div class="question-box">
+                    <legend>5. ¿Cuál es tu género de videojuegos preferido?</legend>
+                    <input type="radio" id="p5_1" name="genero" value="Accion/Disparos" hidden>
+                    <label for="p5_1" class="option-label">💥 Acción / Shooters (FPS, Battle Royale)</label>
+                    <input type="radio" id="p5_2" name="genero" value="RPG/Estrategia" hidden>
+                    <label for="p5_2" class="option-label">🗺️ RPG / Estrategia (Aventura, Rol, Tácticos)</label>
+                    <input type="radio" id="p5_3" name="genero" value="Deportes/Carreras" hidden>
+                    <label for="p5_3" class="option-label">⚽ Deportes / Carreras (FIFA/EA FC, Simuladores)</label>
+                </div>
+                <div class="question-box">
+                    <legend>6. Al jugar en línea, ¿sueles utilizar chat de voz con otros jugadores?</legend>
+                    <input type="radio" id="p6_1" name="chat_voz" value="Siempre/Frecuente" hidden>
+                    <label for="p6_1" class="option-label">🎙️ Sí, siempre o de forma frecuente para coordinar o hablar</label>
+                    <input type="radio" id="p6_2" name="chat_voz" value="Nunca/Rara vez" hidden>
+                    <label for="p6_2" class="option-label">🤫 No, prefiero jugar sin usar el micrófono o con chat de texto</label>
+                </div>
+                <div class="controls">
+                    <button type="button" onclick="navegar(-1)">Atrás</button>
+                    <button type="button" onclick="navegar(1)">Siguiente</button>
+                </div>
+            </div>
+
+            <!-- BLOQUE 3: PREGUNTAS 7, 8 y 9 (Consumo y Comunidad) -->
+            <div class="page" data-page="3">
+                <div class="question-box">
+                    <legend>7. ¿Acostumbras realizar micropagos dentro de los videojuegos (skins, pases de batalla)?</legend>
+                    <input type="radio" id="p7_1" name="micropagos" value="Si" hidden>
+                    <label for="p7_1" class="option-label">💳 Sí, suelo gastar dinero ocasionalmente en contenido estético o pases</label>
+                    <input type="radio" id="p7_2" name="micropagos" value="No" hidden>
+                    <label for="p7_2" class="option-label">🛡️ No, prefiero jugar solo contenido gratuito o el base sin pagar extras</label>
+                </div>
+                <div class="question-box">
+                    <legend>8. ¿Consumes contenido audiovisual de videojuegos en plataformas de streaming (Twitch, YouTube)?</legend>
+                    <input type="radio" id="p8_1" name="streaming" value="Frecuentemente" hidden>
+                    <label for="p8_1" class="option-label">📺 Sí, veo streams, torneos de eSports o gameplays de forma habitual</label>
+                    <input type="radio" id="p8_2" name="streaming" value="Rara vez/Nunca" hidden>
+                    <label for="p8_2" class="option-label">✖️ No me interesa ver a otros jugar, prefiero jugar yo mismo</label>
+                </div>
+                <div class="question-box">
+                    <legend>9. ¿Cuál es el factor más importante para ti al momento de elegir un juego nuevo?</legend>
+                    <input type="radio" id="p9_1" name="prioridad" value="Graficos/Jugabilidad" hidden>
+                    <label for="p9_1" class="option-label">🎨 Su apartado gráfico, jugabilidad técnica y mecánicas de acción</label>
+                    <input type="radio" id="p9_2" name="prioridad" value="Historia/Narrativa" hidden>
+                    <label for="p9_2" class="option-label">📖 La profundidad de su historia, narrativa y desarrollo de personajes</label>
+                </div>
+                <div class="controls">
+                    <button type="button" onclick="navegar(-1)">Atrás</button>
+                    <button type="button" onclick="finalizarYGuardar()">Finalizar y Guardar</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="loading" id="loadingMessage">📡 TRANSMITIENDO PREFERENCIAS AL SERVIDOR GOOGLE SHEETS... Espere un momento...</div>
+
+        <div id="successMessage" style="display:none; text-align:center; padding:20px;">
+            <h2 style="color:var(--neon-green)">🛸 ¡RESPUESTAS RECIBIDAS!</h2>
+            <p style="margin-top:10px;">Tus gustos y hábitos se han inyectado de forma anónima en la hoja de cálculo del proyecto en tiempo real.</p>
+        </div>
+    </div>
+
+    <script>
+    // URL de tu Google Apps Script actualizada
+    const URL_CONEXION_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbxUQTWbZIRvYs_MJLdFNEt9ZaUzmDwuF95_qvuqR4k5XuN_O4MjBZsqBy2ds1Bg3EX66A/exec";
+
+    let paginaActual = 0; 
+    const totalPaginas = 3;
+
+    function iniciarEncuesta() {
+        if(!document.querySelector('input[name="consentimiento"]:checked')) {
+            alert("⚖️ Es requerido marcar la casilla para cumplir los términos de privacidad de datos de la Ley 81.");
+            return;
+        }
+        document.getElementById('pageConsent').classList.remove('active');
+        document.getElementById('consentBanner').style.opacity = "0.4";
+        document.getElementById('progressContainer').style.display = "block";
+        
+        paginaActual = 1;
+        document.querySelector('.page[data-page="1"]').classList.add('active');
+        actualizarBarra();
+    }
+
+    function navegar(direccion) {
+        const paginas = document.querySelectorAll('.page[data-page]');
+        
+        if(direccion === 1) {
+            const inputsActivos = paginas[paginaActual - 1].querySelectorAll('input');
+            const nombresUnicos = [...new Set(Array.from(inputsActivos).map(i => i.name))];
+            let todasRespondidas = nombresUnicos.every(name => document.querySelector(`input[name="${name}"]:checked`));
+            
+            if(!todasRespondidas) {
+                alert("⚠️ ¡Acción bloqueada! Responde las 3 preguntas de la pantalla antes de continuar.");
+                return;
+            }
+        }
+
+        paginas[paginaActual - 1].classList.remove('active');
+        paginaActual += direccion;
+
+        if (paginaActual === 0) {
+            document.getElementById('progressContainer').style.display = "none";
+            document.getElementById('pageConsent').classList.add('active');
+        } else {
+            paginas[paginaActual - 1].classList.add('active');
+            actualizarBarra();
+        }
+    }
+
+    function actualizarBarra() {
+        document.getElementById('progress').style.width = `${(paginaActual / totalPaginas) * 100}%`;
+    }
+
+    function finalizarYGuardar() {
+        const paginas = document.querySelectorAll('.page[data-page]');
+        const inputsActivos = paginas[2].querySelectorAll('input');
+        const nombresUnicos = [...new Set(Array.from(inputsActivos).map(i => i.name))];
+        let todasRespondidas = nombresUnicos.every(name => document.querySelector(`input[name="${name}"]:checked`));
+        
+        if(!todasRespondidas) {
+            alert("⚠️ Por favor responde las 3 últimas preguntas antes de pulsar finalizar.");
+            return;
+        }
+
+        document.getElementById('surveyForm').style.display = 'none';
+        document.getElementById('loadingMessage').style.display = 'block';
+
+        const formElement = document.getElementById('surveyForm');
+        const formData = new FormData(formElement);
+        const queryParams = new URLSearchParams(formData).toString();
+
+        // Enviamos la petición utilizando no-cors para evitar bloqueos de origen cruzado en los navegadores de tus compañeros
+        fetch(`${URL_CONEXION_GOOGLE_SCRIPT}?${queryParams}`, {
+            method: "POST",
+            mode: "no-cors"
+        })
+        .then(() => {
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('consentBanner').style.display = 'none';
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'block';
+        })
+        .catch(err => {
+            alert("Error de enlace con Google Sheets: " + err);
+            document.getElementById('surveyForm').style.display = 'block';
+            document.getElementById('loadingMessage').style.display = 'none';
+        });
+    }
+</script>
+</body>
+</html>
